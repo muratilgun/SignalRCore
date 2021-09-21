@@ -51,6 +51,8 @@ namespace SignalRCore.Controllers
         }
 
         // GET: Product/Create
+        [HttpGet]
+
         public IActionResult Create()
         {
             return View();
@@ -71,6 +73,8 @@ namespace SignalRCore.Controllers
         }
 
         // GET: Product/Edit/5
+        [HttpGet]
+
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -121,6 +125,7 @@ namespace SignalRCore.Controllers
         }
 
         // GET: Product/Delete/5
+        [HttpGet]
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
