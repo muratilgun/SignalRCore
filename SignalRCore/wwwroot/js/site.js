@@ -1,5 +1,4 @@
-﻿const { signalR } = require("../microsoft/signalr/dist/browser/signalr");
-
+﻿
 $(() => {
 
     var connection = new signalR.HubConnectionBuilder().withUrl("/signalrServer").build();
@@ -11,7 +10,7 @@ $(() => {
     function LoadProdData() {
         var tr = '';
         $.ajax({
-            url: '/Products/GetProducts',
+            url: '/Product/GetProducts',
             method: 'GET',
             success: (result) => {
                 $.each(result, (k, v) => {
