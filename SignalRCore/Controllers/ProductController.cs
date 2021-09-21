@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using SignalRCore.Models;
 
@@ -12,16 +13,23 @@ namespace SignalRCore.Controllers
     public class ProductController : Controller
     {
         private readonly ApplicationDBContext _context;
-
-        public ProductController(ApplicationDBContext context)
+        private readonly IHubContext<SignalrServer> _signalrHub;
+        public ProductController(ApplicationDBContext context, IHubContext<SignalrServer> signalrHub)
         {
             _context = context;
+            _signalrHub = signalrHub;
         }
 
         // GET: Product
         public async Task<IActionResult> Index()
         {
             return View(await _context.Products.ToListAsync());
+        }
+        [HttpGet]
+        public IActionResult GetProducts()
+        {
+            var res = _context.Products.ToList();
+            return Ok(res);
         }
 
         // GET: Product/Details/5
@@ -48,9 +56,6 @@ namespace SignalRCore.Controllers
             return View();
         }
 
-        // POST: Product/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to, for 
-        // more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("ProdId,ProdName,Category,UnitPrice,StockQty")] Product product)
@@ -59,6 +64,7 @@ namespace SignalRCore.Controllers
             {
                 _context.Add(product);
                 await _context.SaveChangesAsync();
+                await _signalrHub.Clients.All.SendAsync("LoadProduct");
                 return RedirectToAction(nameof(Index));
             }
             return View(product);
@@ -80,14 +86,11 @@ namespace SignalRCore.Controllers
             return View(product);
         }
 
-        // POST: Product/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to, for 
-        // more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("ProdId,ProdName,Category,UnitPrice,StockQty")] Product product)
+        public async Task<IActionResult> Edit(int ProdId, [Bind("ProdId,ProdName,Category,UnitPrice,StockQty")] Product product)
         {
-            if (id != product.ProdId)
+            if (ProdId != product.ProdId)
             {
                 return NotFound();
             }
@@ -98,6 +101,8 @@ namespace SignalRCore.Controllers
                 {
                     _context.Update(product);
                     await _context.SaveChangesAsync();
+                    await _signalrHub.Clients.All.SendAsync("LoadProduct");
+
                 }
                 catch (DbUpdateConcurrencyException)
                 {
@@ -136,11 +141,13 @@ namespace SignalRCore.Controllers
         // POST: Product/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        public async Task<IActionResult> DeleteConfirmed(int ProdId)
         {
-            var product = await _context.Products.FindAsync(id);
+            var product = await _context.Products.FindAsync(ProdId);
             _context.Products.Remove(product);
             await _context.SaveChangesAsync();
+            await _signalrHub.Clients.All.SendAsync("LoadProduct");
+
             return RedirectToAction(nameof(Index));
         }
 
